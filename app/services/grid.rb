@@ -3,7 +3,7 @@
 require "matrix"
 
 class Grid
-  GRID_COMPONENTS = {
+  PRINT_COMPONENTS = {
     tl: "⌜",
     bl: "⌞",
     br: "⌟",
@@ -20,15 +20,27 @@ class Grid
     tree: "🌲",
   }.freeze
 
-  GRID_SIZE = 5.freeze
+  JSON_COMPONENTS = {
+    empty: 0,
+    onethree: 1,
+    zerotwo: 2,
+    tree: 4,
+  }.freeze
 
-  def initialize
-    @matrix = Matrix.build(GRID_SIZE) { 0 }
-    @proposed = Matrix.build(GRID_SIZE) { 0 }
-  end
+  SUB_GRIDS = {
+    1 => 3,
+    2 => 3,
+    3 => 1,
+  }.freeze
+  DEFAULT_SIZE = 5.freeze
 
-  def add_to_solution!(size, top_left)
-    @matrix += place_matrix(size, top_left)
+  def initialize(seed:, size: DEFAULT_SIZE)
+    @rng = Random.new(seed)
+    @size = size
+    @matrix = Matrix.build(@size) { 0 }
+    @proposed = Matrix.build(@size) { 0 }
+
+    build_solution
   end
 
   def add_to_proposal!(size, top_left)
@@ -51,44 +63,85 @@ class Grid
     puts to_s(hide_vals: false)
   end
 
+  def as_json(hide_vals: true)
+    {
+      seed: @rng.seed,
+      size: @size,
+      matrix: matrix_as_json(@matrix, hide_vals: hide_vals),
+    }
+  end
+
+  def as_json!
+    as_json(hide_vals: false)
+  end
+
   def to_s(hide_vals: false)
-    g = GRID_COMPONENTS
-    output = ""
-    output += g[:tl] + ("  " * GRID_SIZE) + g[:tr] + "\n"
+    g = PRINT_COMPONENTS
+    local_rng = Random.new(@rng.seed)
+
+    # Padding
+    output = "Seed: #{@rng.seed}\n"
+    output += g[:tl] + ("  " * @size) + g[:tr] + "\n"
+
+    # Translate (if required) and print the matrix
     @matrix.row_vectors.each do |row|
-      result_row = if hide_vals
-                     row.map do |el|
-                       case el
-                       when 4
-                         g[:tree]
-                       when 1, 3
-                         g[:onethree]
-                       when 2
-                         g[:zerotwo]
-                       when 0
-                         rand(2).even? ? g[:empty] : g[:zerotwo]
-                       end
-                     end
-      else
-                     row
-      end.to_a
+      result_row = (hide_vals ? do_hide_vals(row, g, local_rng) : row).to_a
       output += " " + result_row.join("") + " \n"
     end
-    output + g[:bl] + ("  " * GRID_SIZE) + g[:br] + "\n"
+
+    # Padding
+    output + g[:bl] + ("  " * @size) + g[:br] + "\n"
   end
 
   private
 
+  def build_solution
+    SUB_GRIDS.each do |size, count|
+      furthest_position = @size - size + 1
+      count.times do
+        top_left = [ @rng.rand(furthest_position), @rng.rand(furthest_position) ]
+        add_to_solution!(size, top_left)
+      end
+    end
+  end
+
+  def add_to_solution!(size, top_left)
+    @matrix += place_matrix(size, top_left)
+  end
+
+
+
+  def matrix_as_json(matrix, hide_vals: false)
+    local_rng = Random.new(@rng.seed)
+    matrix.row_vectors.map do |row|
+      (hide_vals ? do_hide_vals(row, JSON_COMPONENTS, local_rng) : row).to_a
+    end
+  end
+
+  def do_hide_vals(row, mapping, rng)
+    row.map do |el|
+      case el
+      when 4
+        mapping[:tree]
+      when 1, 3
+        mapping[:onethree]
+      when 2
+        mapping[:zerotwo]
+      when 0
+        rng.rand(2).even? ? mapping[:empty] : mapping[:zerotwo]
+      end
+    end
+  end
 
   def place_matrix(size, top_left)
     start_row, start_col = top_left
 
     # Ensure the placement is within bounds
-    if start_row + size > GRID_SIZE || start_col + size > GRID_SIZE
+    if start_row + size > @size || start_col + size > @size
       raise ArgumentError, "The smaller matrix doesn't fit at the specified coordinates."
     end
 
-    in_grid = Matrix.build(GRID_SIZE) { 0 }
+    in_grid = Matrix.build(@size) { 0 }
     size.times do |i|
       size.times do |j|
         in_grid[start_row + i, start_col + j] = 1
