@@ -34,25 +34,36 @@ class Grid
   }.freeze
   DEFAULT_SIZE = 5.freeze
 
+  CELL_CAPACITY = 4.freeze
+
   def initialize(seed:, size: DEFAULT_SIZE)
     @rng = Random.new(seed)
     @size = size
     @matrix = Matrix.build(@size) { 0 }
     @proposed = Matrix.build(@size) { 0 }
+    @construction = []
 
     build_solution
   end
 
-  def add_to_proposal!(size, top_left)
+  def add_to_proposed_solution!(size, top_left)
     test = @proposed + place_matrix(size, top_left)
     if (@matrix - test).any? { |el| el < 0 }
-      raise ArgumentError, "bad solution"
+      raise ArgumentError, "bad solution".freeze
     end
     @proposed = test
   end
 
   def matrix
     @matrix
+  end
+
+  def construction
+    @construction
+  end
+
+  def solved?
+    @matrix == @proposed
   end
 
   def show
@@ -63,12 +74,18 @@ class Grid
     puts to_s(hide_vals: false)
   end
 
-  def as_json(hide_vals: true)
-    {
+  def proposed_as_json
+    matrix_as_json(@proposed, hide_vals: false)
+  end
+
+  def as_json(hide_vals: true, matrix: @matrix)
+    h = {
       seed: @rng.seed,
       size: @size,
-      matrix: matrix_as_json(@matrix, hide_vals: hide_vals),
+      matrix: matrix_as_json(matrix, hide_vals: hide_vals),
     }
+    h[:construction] = @construction unless hide_vals
+    h
   end
 
   def as_json!
@@ -96,20 +113,27 @@ class Grid
   private
 
   def build_solution
-    SUB_GRIDS.each do |size, count|
+    # For each component type, starting from the largest
+    SUB_GRIDS.sort_by { |k, _v| k }.reverse.each do |size, count|
       furthest_position = @size - size + 1
       count.times do
-        top_left = [ @rng.rand(furthest_position), @rng.rand(furthest_position) ]
+        top_left = [@rng.rand(furthest_position), @rng.rand(furthest_position)]
         add_to_solution!(size, top_left)
+      rescue RangeError
+        puts "seed #{@rng.seed} failed to place a #{size}x#{size} component at #{top_left}, retrying..."
+        retry
       end
     end
   end
 
   def add_to_solution!(size, top_left)
-    @matrix += place_matrix(size, top_left)
+    test = @matrix + place_matrix(size, top_left)
+    if test.any? { |el| el > CELL_CAPACITY }
+      raise RangeError, "placement is out of bounds".freeze
+    end
+    @matrix = test
+    @construction << { size: size, top_left: top_left }
   end
-
-
 
   def matrix_as_json(matrix, hide_vals: false)
     local_rng = Random.new(@rng.seed)

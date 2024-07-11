@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-Arg = Data.define(:name, :type) do
+Arg = Data.define(:name, :type, :required, :default) do
   Boolean = ActiveModel::Type::Boolean # local alias, making underlying datastructures less AM-dependent
   WHITELIST = %w[String Integer Float Hash] << Boolean.to_s
   MAPPABLE_WHITELIST = {
@@ -11,7 +11,7 @@ Arg = Data.define(:name, :type) do
     object: "Hash",
   }.stringify_keys
 
-  def initialize(name:, type:)
+  def initialize(name:, type:, required:, default: nil)
     t_class =
       if %w[String Symbol].include? type.class.to_s
         t_sanitised = MAPPABLE_WHITELIST.include?(type) ? MAPPABLE_WHITELIST[type] : type
@@ -24,7 +24,7 @@ Arg = Data.define(:name, :type) do
         raise ArgumentError, "Unexpected type #{type}"
       end
 
-    super(name: name, type: t_class)
+    super(name: name, type: t_class, required: required, default: default)
   end
 
   def type_as_json
@@ -32,6 +32,6 @@ Arg = Data.define(:name, :type) do
   end
 
   def as_json
-    { name: name, type: type_as_json }.stringify_keys
+    { name: name, type: type_as_json, required: required, default: default }.stringify_keys
   end
 end

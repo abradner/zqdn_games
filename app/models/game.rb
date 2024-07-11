@@ -6,8 +6,8 @@ class Game
       name: "Forest Grid",
       klass: "Grid",
       args: [
-        { name: "seed", type: "int" },
-        { name: "size", type: "int" },
+        { name: "seed", type: "int", required: true, default: nil },
+        { name: "size", type: "int", required: false, default: Grid::DEFAULT_SIZE },
       ],
     },
   ].map { |game| StaticGame.new(**game) }
