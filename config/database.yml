@@ -19,10 +19,16 @@ default: &default
   # https://guides.rubyonrails.org/configuring.html#database-pooling
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
 
+local: &local
+  <<: *default
+  username: postgres
+  password: password
+  host: 127.0.0.1
+
 
 development:
-  <<: *default
-  database: games_development
+  <<: *local
+  database: zqdn_games_development
 
   # The specified database role being used to connect to PostgreSQL.
   # To create additional roles in PostgreSQL see `$ createuser --help`.
@@ -55,8 +61,8 @@ development:
 # re-generated from your development database when you run "rake".
 # Do not set this db to the same as development or production.
 test:
-  <<: *default
-  database: games_test
+  <<: *local
+  database: zqdn_games_test
 
 # As with config/credentials.yml, you never want to store sensitive information,
 # like your database password, in your source code. If your source code is
@@ -80,6 +86,6 @@ test:
 #
 production:
   <<: *default
-  database: games_production
-  username: games
+  database: zqdn_games_production
+  username: zqdn_games
   password: <%= ENV["GAMES_DATABASE_PASSWORD"] %>
