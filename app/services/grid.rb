@@ -117,7 +117,7 @@ class Grid
     SUB_GRIDS.sort_by { |k, _v| k }.reverse.each do |size, count|
       furthest_position = @size - size + 1
       count.times do
-        top_left = [@rng.rand(furthest_position), @rng.rand(furthest_position)]
+        top_left = [ @rng.rand(furthest_position), @rng.rand(furthest_position) ]
         add_to_solution!(size, top_left)
       rescue RangeError
         puts "seed #{@rng.seed} failed to place a #{size}x#{size} component at #{top_left}, retrying..."

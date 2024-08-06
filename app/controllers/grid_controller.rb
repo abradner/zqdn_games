@@ -49,7 +49,7 @@ class GridController < ApplicationController
       grid.add_to_proposed_solution!(size, top_left)
 
     rescue ArgumentError => e
-      errors << [proposal, e.message]
+      errors << [ proposal, e.message ]
     end
 
     payload = { seed: seed, size: size, proposed_solution: grid.proposed_as_json, solved: grid.solved?, grid: grid }
