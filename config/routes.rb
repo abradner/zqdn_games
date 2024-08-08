@@ -17,5 +17,4 @@ Rails.application.routes.draw do
       get :new
     end
   end
-
 end
