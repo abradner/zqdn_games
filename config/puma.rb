@@ -27,23 +27,6 @@ threads threads_count, threads_count
 rails_env = ENV.fetch("RAILS_ENV", "development")
 environment rails_env
 
-case rails_env
-when "production"
-  # If you are running more than 1 thread per process, the workers count
-  # should be equal to the number of processors (CPU cores) in production.
-  #
-  # Automatically detect the number of available processors in production.
-  require "concurrent-ruby"
-  workers_count = Integer(ENV.fetch("WEB_CONCURRENCY") { Concurrent.available_processor_count })
-  workers workers_count if workers_count > 1
-
-  preload_app!
-when "development"
-  # Specifies a very generous `worker_timeout` so that the worker
-  # isn't killed by Puma when suspended by a debugger.
-  worker_timeout 3600
-end
-
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch("PORT", 3000)
 
