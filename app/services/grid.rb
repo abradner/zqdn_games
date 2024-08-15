@@ -28,11 +28,12 @@ class Grid
   }.freeze
 
   SUB_GRIDS = {
-    1 => 3,
-    2 => 3,
-    3 => 1,
+    1 => 2,
+    2 => 2,
+    3 => 2,
+    4 => 1,
   }.freeze
-  DEFAULT_SIZE = 5.freeze
+  DEFAULT_SIZE = 6.freeze
 
   CELL_CAPACITY = 4.freeze
 
@@ -82,6 +83,7 @@ class Grid
     h = {
       seed: @rng.seed,
       size: @size,
+      sub_grids: SUB_GRIDS.map { | k, v | Array.new(v, k) }.flatten,
       matrix: matrix_as_json(matrix, hide_vals: hide_vals),
     }
     h[:construction] = @construction unless hide_vals
